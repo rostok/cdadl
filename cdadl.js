@@ -1,3 +1,4 @@
+var moment = require('moment');
 var fs = require('fs');
 var url = require('url');
 var util  = require('util');
@@ -20,8 +21,11 @@ function findBetween(strToParse, strStart, strFinish) {
 }
 
 function downloadMovie(movieURL) {
+				var startTime = process.hrtime();
                 console.log("videourl:", movieURL);
-
+				if (movieURL.indexOf(".mp4")===-1) {
+					return;
+				}
                 var fl = movieURL.split("?")[0].split("/").pop().trim();
                 fl = filenamePrefix + fl.split("/").pop().trim();
                 console.log("out file:", fl);
@@ -66,19 +70,24 @@ function downloadMovie(movieURL) {
                             .on('response', function(resp) {
                                 if (resp.statusCode != 200) {
                                     //console.error("statusCode:", resp.statusCode);
-                                    // process.exit();
-                                    // console.log("e:", err);
-                                    // console.log("i:", inc);
-                                    // console.log("res:", res);
-                                    // console.log("resp:", resp.headers);
+                                    //process.exit();
+                                    //console.log("e:", err);
+                                    //console.log("i:", inc);
+                                    //console.log("resp:", resp);
+                                    //console.log("resp:", resp.headers);
                                 }
                             })
                             .on('progress', function(state) {
+								var diffTime = process.hrtime(startTime);
+								var ETA = diffTime[0] / state.size.transferred * (state.size.total-state.size.transferred);
+								ETA = "ETA "+moment("2015-01-01").startOf('day').seconds(ETA).format('H:mm:ss');
+								//ETA = "ETA "+moment.duration(ETA, "seconds").humanize();
+
                                 status = 
                                 			//("      "+(state.percentage*100).toFixed(2)).slice(-6) + "% " +  // this request percentage
                                 			("      "+((fileSizeInBytes+state.size.transferred)*100/conlen).toFixed(2)).slice(-6) + "% " +  // total file percentage
                                 			("               "+((fileSizeInBytes+state.size.transferred) / 1024 / 1024).toFixed(1) + "/" + ((fileSizeInBytes+state.size.total) / 1024 / 1024).toFixed(1)).slice(-15) + "MB " + 
-                                			" @"+(state.speed/1024).toFixed(1)+"kB/s ";
+                                			" @"+(state.speed/1024).toFixed(1)+"kB/s "+ETA;
                                 //console.log(status);
                                 downloads[fl] = status;
                                 //console.log('\x1B[2J');
@@ -103,6 +112,20 @@ function downloadMovie(movieURL) {
                             .on('close', function(err) {});
                     }
                     else {
+
+                        try {
+                            var stats = fs.statSync(fl);
+                            fileSizeInBytes = stats.size;
+                            if (fileSizeInBytes < conlen) {
+                    			console.log("\n\ndownload incomplete");
+                            	process.exit();
+                            }
+                        } catch (e) {
+	                    	console.log("\n\nerror while fs.statSync()", fl, e);
+                    		process.exit();
+                        }
+
+                    	console.log("\n\ndownload complete");
                     	process.exit();
                     }
                 });
