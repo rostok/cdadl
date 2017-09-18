@@ -133,6 +133,7 @@ function downloadMovie(movieURL) {
 
 
 var c = new Crawler({
+    encoding: null,
     maxConnections: 1,
     // This will be called for each crawled page
     callback: function(error, result, $) {
