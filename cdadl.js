@@ -12,6 +12,7 @@ var js_beautify = require("js-beautify").js_beautify;
 
 var downloads = {};
 var filenamePrefix = "";
+var title; 
 
 function findBetween(strToParse, strStart, strFinish) {
     var str = strToParse.match(strStart + "(.*?)" + strFinish);
@@ -27,6 +28,9 @@ function downloadMovie(movieURL) {
 	var startTime = process.hrtime();
     console.log("videourl:", movieURL);
     var fl = movieURL.split("?")[0].split("/").pop().trim();
+
+    filenamePrefix = title.replace(/[^a-z0-9]/gi, '.').replace("..",".").replace("..",".")+".";
+
     fl = filenamePrefix + fl.split("/").pop().trim();
     console.log("out file:", fl);
 
@@ -178,7 +182,8 @@ var c = new Crawler({
             }
         } else {
             // then get the video
-            console.log("title:    " + $("title").text());
+            title = $("title").text();
+            console.log("title:    " + title);
             console.log("fetching: " + result.uri);
             // console.log(result.body);
             $("[id^=mediaplayer]").first().each(function(a) {
