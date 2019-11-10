@@ -21,17 +21,36 @@ function findBetween(strToParse, strStart, strFinish) {
     return str[1];
 }
 
+function rot13(str) {
+  var input     = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+  var output    = 'NOPQRSTUVWXYZABCDEFGHIJKLMnopqrstuvwxyzabcdefghijklm';
+  var index     = x => input.indexOf(x);
+  var translate = x => index(x) > -1 ? output[index(x)] : x;
+  return str.split('').map(translate).join('');
+}
+
 function downloadMovie(movieURL) {
+    // in 2019 urls are ROT13 encoded
+    if (movieURL.startsWith("uggc")) {
+    	console.log("input:", movieURL);
+    	movieURL = rot13(movieURL);
+    	console.log("rot13:", movieURL);
+    	// url has extra 3 characters before extension just to get HTTP 302 
+    	movieURL = movieURL.replace(".mp4","").slice(0,-3)+".mp4";
+    	console.log("trim3:", movieURL);
+    }
     if (movieURL===null || movieURL==="" || movieURL.indexOf(".mp4")===-1) {
+    	console.log("aborting, bad videourl:", movieURL);
         return;
     }
+    console.log("v.url:", movieURL);
 	var startTime = process.hrtime();
-    console.log("videourl:", movieURL);
     var fl = movieURL.split("?")[0].split("/").pop().trim();
 
-    filenamePrefix = title.replace(/[^a-z0-9]/gi, '.').replace("..",".").replace("..",".")+".";
+    filenamePrefix = title.replace(/[^a-z0-9]/gi, '.');
 
-    fl = filenamePrefix + fl.split("/").pop().trim();
+    fl = filenamePrefix + "." + fl.split("/").pop().trim();
+    fl = fl.replace(/\.\./g,".");
     console.log("out file:", fl);
 
     var fileSizeInBytes = 0;
@@ -100,6 +119,7 @@ function downloadMovie(movieURL) {
                     var dls=0;
                     for (var property in downloads) {
                         //console.log(downloads[property] + "\t" + property+"\r");
+                        process.stdout.clearLine();
                     	process.stdout.write(downloads[property] + "\t" + property);
                     	process.stdout.write("\r");
                     	dls++;
@@ -108,6 +128,7 @@ function downloadMovie(movieURL) {
                     //console.log(state);
                 })
                 .on('error', function(err) {
+	 				fs.writeFileSync('error', util.inspect(result, true, null), {flags:'w+'});
                     console.error("ERROR!", err);
                 })
                 .pipe(fs.createWriteStream(fl, {
@@ -137,6 +158,7 @@ function downloadMovie(movieURL) {
 
 
 var c = new Crawler({
+    userAgent: 'cdadl', // Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.87 Safari/537.36
     encoding: null,
     maxConnections: 1,
     // This will be called for each crawled page
@@ -181,11 +203,12 @@ var c = new Crawler({
                 }
             }
         } else {
+            //console.log(result.body);
             // then get the video
             title = $("title").text();
             console.log("title:    " + title);
             console.log("fetching: " + result.uri);
-            // console.log(result.body);
+            //$("[id^=mediaplayer]").each((a,e)=>{ console.log("e:"+e.attribs.id); });
             $("[id^=mediaplayer]").first().each(function(a) {
                 var movieURL = "";
             	try{
