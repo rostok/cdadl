@@ -1,6 +1,6 @@
 # cdadl
 
-cdadl is a Node.js script for downloading videos from cda.pl. Code it's really pretty but should get you idea how to crawl pages, deobfuscate JS and download files.
+cdadl is a Node.js script for downloading videos from cda.pl. This shameful code is crap but should get you idea how to crawl pages, deobfuscate JS and download files.
 
 # Building
 Get the repo, and install necessary packages with

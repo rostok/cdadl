@@ -13,6 +13,7 @@ var js_beautify = require("js-beautify").js_beautify;
 var downloads = {};
 var filenamePrefix = "";
 var title; 
+var savedResult = "";
 
 function findBetween(strToParse, strStart, strFinish) {
     var str = strToParse.match(strStart + "(.*?)" + strFinish);
@@ -29,21 +30,75 @@ function rot13(str) {
   return str.split('').map(translate).join('');
 }
 
+    ma = function(a) {
+        a = a.replace(".cda.mp4", "");
+        a = a.replace(".2cda.pl", ".cda.pl");
+        a = a.replace(".3cda.pl", ".cda.pl");
+        return "https://" + a + ".mp4"
+    }
+	ia = function(a) {
+        for (var b = [], e = 0; e < a.length; e++) {
+            var f = a.charCodeAt(e);
+            b[e] = 33 <= f && 126 >= f ? String.fromCharCode(33 + (f + 14) % 94) : String.fromCharCode(f)
+        }
+        return ma(b.join(""))
+    }
+	ja = function(a) {
+        String.fromCharCode(("Z" >= a ? 82 : 132) >= (c = a.charCodeAt(0) + 11) ? c : c - 55);
+        return ia(a)
+    }
+    la = function(a) {
+        return decodeURIComponent(a)
+    }
+    ka = function(a) {
+        return ja(la(L(a)))
+    }
+    L = function(a) {
+        return a.replace(/[a-zA-Z]/g, function(a) {
+            return String.fromCharCode(("Z" >= a ? 90 : 122) >= (a = a.charCodeAt(0) + 13) ? a : a - 26)
+        })
+    }
+	M = function(a) {
+        String.fromCharCode(("Z" >= a ? 11 : 344) >= (c = a.charCodeAt(0) + 22) ? c : c - 11);
+        a = a.replace("_XDDD", "");
+        a = a.replace("_CDA", "");
+        a = a.replace("_ADC", "");
+        a = a.replace("_CXD", "");
+        a = a.replace("_QWE", "");
+        a = a.replace("_Q5", "");
+        a = a.replace("_IKSDE", "");
+        a = ka(L(a));
+        return a;
+    }
+
 function downloadMovie(movieURL) {
+    // in 2020 urls use M()
+    if (M(movieURL)==M("")) {
+    	throw "empty movieURL";
+    }
+    if (M(movieURL).includes(".mp4")) {
+    	console.log("input:\t", movieURL);
+    	movieURL = M(movieURL);
+    	console.log("M():\t", movieURL);
+    	// url has extra 3 characters before extension just to get HTTP 302 
+    	//movieURL = movieURL.replace(".mp4","").slice(0,-3)+".mp4";
+    	//console.log("trim3:", movieURL);
+    }
     // in 2019 urls are ROT13 encoded
     if (movieURL.startsWith("uggc")) {
-    	console.log("input:", movieURL);
+    	console.log("input:\t", movieURL);
     	movieURL = rot13(movieURL);
-    	console.log("rot13:", movieURL);
+    	console.log("rot13:\t", movieURL);
     	// url has extra 3 characters before extension just to get HTTP 302 
     	movieURL = movieURL.replace(".mp4","").slice(0,-3)+".mp4";
-    	console.log("trim3:", movieURL);
+    	console.log("trim3:\t", movieURL);
     }
     if (movieURL===null || movieURL==="" || movieURL.indexOf(".mp4")===-1) {
     	console.log("aborting, bad videourl:", movieURL);
+	 	fs.writeFileSync('result.html', savedResult, {flags:'w+'});
         return;
     }
-    console.log("v.url:", movieURL);
+    console.log("v.url:\t", movieURL);
 	var startTime = process.hrtime();
     var fl = movieURL.split("?")[0].split("/").pop().trim();
 
@@ -51,7 +106,7 @@ function downloadMovie(movieURL) {
 
     fl = filenamePrefix + "." + fl.split("/").pop().trim();
     fl = fl.replace(/\.\./g,".");
-    console.log("out file:", fl);
+    console.log("outfile:", fl);
 
     var fileSizeInBytes = 0;
     try {
@@ -74,6 +129,12 @@ function downloadMovie(movieURL) {
         method: "HEAD",
         headers: headers
     }, function callback(err, inc, res) {
+//	try {    	
+        if (inc==undefined) {
+        	console.log("inc:",inc);
+        	console.log("err:",err);
+        	process.exit();
+        }
         var conlen = inc.headers['content-length'];
         //console.log("conlen"+conlen);
         if (fileSizeInBytes < conlen) {
@@ -153,7 +214,13 @@ function downloadMovie(movieURL) {
         	console.log("\n\ndownload complete");
         	process.exit();
         }
-    });
+//    }
+//    catch (ex) {
+//    	console.log("downloadUrl failed, exiting");
+//       	process.exit();
+//    }
+    }
+    );
 }
 
 
@@ -163,6 +230,8 @@ var c = new Crawler({
     maxConnections: 1,
     // This will be called for each crawled page
     callback: function(error, result, $) {
+
+	savedResult = result.body;
 
     try{
         if (result.uri.indexOf("?wers") == -1) {
@@ -217,17 +286,21 @@ var c = new Crawler({
         	        movieURL = findBetween(result.body, ss, "\\';");
                 	downloadMovie(movieURL);
                 } catch(ex) {
-                	console.log("first method failed");
+                	console.log("first method failed:"+ex);
                 }
 
                 try {
-                if (movieURL===null || movieURL==="")
-                {
-                	movieURL = JSON.parse(this.attribs.player_data).video.file;
-                    downloadMovie(movieURL);
-                }
+                	if (movieURL===null || movieURL==="")
+	                {
+    	            	movieURL = JSON.parse(this.attribs.player_data).video.file;
+        	        	//console.log(this.attribs.player_data);
+//	 	fs.writeFileSync('result.html', result.body, {flags:'w+'});
+//        process.exit();
+//						movieURL = movieURL.slice(0,-2);
+            	        downloadMovie(movieURL);
+                	}
                 } catch (ex) {
-                    console.log("second method failed");
+                    console.log("second method failed:"+ex);
                 }
             });
 
