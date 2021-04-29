@@ -11,13 +11,14 @@ npm install
 # Usage
 Run with node like this:
 ```
-node cdadl.js [video-url] [format] [filename-prefix]
+node cdadl.js [video-url] [format] [filename-prefix] [aria]
 ```
 Example:
 
 ```
 node cdadl.js http://www.cda.pl/video/666 720p some.movie.
 ```
+If last parameter includes `aria` string then aria2c downloader will be spawned in separate window. It is much faster.
 
 # Advanced usage in Windows
 Remember that you can also:
