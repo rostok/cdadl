@@ -1,4 +1,4 @@
-const { spawn } = require('child_process');
+const spawn = require('child_process').spawn;
 var moment = require('moment');
 var fs = require('fs');
 var url = require('url');
@@ -112,11 +112,12 @@ function downloadMovie(movieURL) {
     console.log("outfile:", fl);
 
     console.log("aria2c ", movieURL, " -o ", fl);
-    console.log(process.argv.join("|"));
+    //console.log(process.argv.join("|"));
     if (process.argv[process.argv.length - 1].includes("aria")) {
         console.log("calling aria...");
         spawn('aria2c', [movieURL, "-o", fl], {
-            detached: true
+            detached: true,
+            shell: true
         });
         console.log("bye bye...");
         process.exit();
