@@ -1,3 +1,5 @@
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0; // hell with protection
+
 const https = require('https')
 const spawn = require('child_process').spawn;
 var moment = require('moment');
@@ -174,7 +176,7 @@ var c = new Crawler({
             var playerData = JSON.parse(playerDataJSON);
             if (!playerData || !playerData.video || !playerData.video.qualities) throw "player_data has no qualities";
             var qs = playerData.video.qualities;
-            var formats = Object.keys(qs).concat(Object.values(qs));
+            var formats = Object.keys(qs).concat(Object.keys(qs).map(k=>qs[k])); // old node has no Object.values() 
             console.log("formats:  "+formats.join(" "));
 
             if (formats.length==0) throw "no formats found";
@@ -182,7 +184,7 @@ var c = new Crawler({
             var fmt = formats[formats.length-1];
             // if format is passed into command line
             if (process.argv.length > 3 && formats.indexOf(process.argv[3]) > -1) fmt = process.argv[3];
-            fmt = Object.values(qs).find(v => v == fmt || v == qs[fmt]) ;
+            fmt = Object.keys(qs).map(k=>qs[k]).find(v => v == fmt || v == qs[fmt]) ;
 
             title = $("title").text();
             console.log("title:    " + title);
@@ -193,8 +195,7 @@ var c = new Crawler({
             const data = `{"jsonrpc":"2.0","method":"videoGetLink","params":["${playerData.video.id}","${fmt}",${playerData.video.ts},"${playerData.video.hash2}",{}],"id":1}`;
 
             https.request(
-            				"https://www.cda.pl/",
-            				{method:'POST',headers:{'User-Agent':'Chrome'}},
+            				{host: "www.cda.pl", port:443, path:"/", method:'POST',headers:{'User-Agent':'Chrome'}},
             				res => {
                             		res.on('data', d => { 
                             			// videoGetLink response received
