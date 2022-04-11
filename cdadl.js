@@ -28,8 +28,9 @@ function downloadMovie(movieURL, title="") {
     var startTime = process.hrtime();
     var fl = movieURL.split("?")[0].split("/").pop().trim();
 
+    title = title.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     fl = filenamePrefix + title.replace(/[^a-z0-9]/gi, '.') + "." + fl.split("/").pop().trim();
-    fl = fl.replace(/\.\./g, ".");
+    fl = fl.replace(/\.+/g, ".");
     console.log("outfile:", fl);
 
     console.log("aria2c", movieURL, "-o", fl);
@@ -164,7 +165,7 @@ function downloadMovie(movieURL, title="") {
 var c = new Crawler({
     userAgent: 'cdadl', // Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.87 Safari/537.36
     encoding: null,
-    maxConnections: 10,
+    maxConnections: 100,
     // This will be called for each crawled page
     callback: function (error, result, done) {
         var $ = result.$;
@@ -243,8 +244,10 @@ if (process.argv.length < 3) {
     process.exit();
 }
 
-filenamePrefix = process.argv.slice(2).filter(p=>!(p.startsWith("http")||p=="aria"||p=="info")).pop() || "";
+filenamePrefix = process.argv.slice(2).filter(p=>!(p.startsWith("http")||p=="aria"||p=="info"||p=="-")).pop() || "";
 paramurls = process.argv.slice(2).filter(p=>/\d+/.test(p)||p.startsWith("http"));
+
+if (process.argv[2]=="-") paramurls = paramurls.concat( (fs.readFileSync(0)||"").toString().split("\n") );
 
 if (paramurls.length > 0) {
 	paramurls.forEach(p=>{
