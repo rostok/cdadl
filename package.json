@@ -6,7 +6,7 @@
   "dependencies": {
     "crawler": "^1.3.0",
     "https": "^1.0.0",
-    "moment": "^2.29.2",
+    "moment": "^2.29.4",
     "readline-sync": "^1.4.10",
     "request": "^2.88.0",
     "request-progress": "^3.0.0",
